@@ -1,4 +1,4 @@
-import os
+import os, requests
 from dotenv import load_dotenv
 import logging
 from telegram import __version__ as TG_VER
@@ -30,14 +30,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     # user = update.effective_user
     await update.message.reply_html(
-        rf"Welcome to RoastMeBot, send any photo to receive roasts!🔥😈🔥",
+        rf"Welcome to RoastMeBot, send any photo to get roasted! 🔥😈🔥",
         # reply_markup=ForceReply(selective=True),
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
-    await update.message.reply_text("Send any photo to receive roasts! 🔥😈🔥")
+    await update.message.reply_text("Send any photo to get roasted! 🔥😈🔥")
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -46,11 +46,25 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Echo the user message."""
-    await update.message.reply_text("Photo received")
+    await update.message.reply_text("Photo received, generating roast... 🔥")
     file_id = update.message.photo[-1].file_id
-    new_file = await context.bot.get_file(file_id)
-    await new_file.download_to_drive()
-    await update.message.reply_text("Photo downloaded")
+    photo = await context.bot.get_file(file_id)
+    # await photo.download_to_drive()
+    # await update.message.reply_text("Photo downloaded")
+    prompt = await get_prompt(photo)
+    roast = await get_roast(prompt)
+    await update.message.reply_text(roast)
+
+async def get_prompt(photo):
+    return "a person with red hair holding a piece of paper, 1 7 - year - old anime goth girl, 1 7 - year - old goth girl, 1 8 yo, emo, female emo art student, 2 0 yo, 20yo, 1 9 year old, emo anime girl, please do your best, tall female emo art student, hyper - goth"
+
+async def get_roast(prompt):
+    headers = {'Content-Type': "application/json", "Authorization": "Bearer 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"}
+    prompt = f"Make a roast or insult using this prompt: {prompt}"
+    payload = {"model": "text-davinci-003", "prompt": prompt, "temperature": 0.7, "max_tokens": 4000}
+    result = requests.post('https://api.openai.com/v1/completions', headers = headers, json=payload)
+    return result.json()['choices'][0]['text']
+
 
 def main() -> None:
     """Start the bot."""
