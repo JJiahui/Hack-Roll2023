@@ -21,12 +21,15 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import replicate
 from PIL import Image
 
+model = replicate.models.get("pharmapsychotic/clip-interrogator")
+version = model.versions.get("a4a8bafd6089e1716b06057c42b19378250d008b80fe87caa5cd36d40c1eda90")
+
 async def img2Txt(image_path):
     #image_path = '/Users/kaiweilow/Desktop/HandR/6tuwubtzguba1.jpeg'
     #image_path = 'https://i.redd.it/38efkvejdyba1.jpg'
     f = open(image_path, 'rb')
-    model = replicate.models.get("methexis-inc/img2prompt")
-    version = model.versions.get("50adaf2d3ad20a6f911a8a9e3ccf777b263b8596fbd2c8fc26e8888f8a0edbb5")
+    #model = replicate.models.get("methexis-inc/img2prompt")
+    #version = model.versions.get("50adaf2d3ad20a6f911a8a9e3ccf777b263b8596fbd2c8fc26e8888f8a0edbb5")
     output = version.predict(image=f)
     return output
 
