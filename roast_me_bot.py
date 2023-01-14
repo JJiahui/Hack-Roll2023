@@ -18,6 +18,18 @@ if __version_info__ < (20, 0, 0, "alpha", 1):
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
+import replicate
+from PIL import Image
+
+async def img2Txt(image_path):
+    #image_path = '/Users/kaiweilow/Desktop/HandR/6tuwubtzguba1.jpeg'
+    #image_path = 'https://i.redd.it/38efkvejdyba1.jpg'
+    f = open(image_path, 'rb')
+    model = replicate.models.get("methexis-inc/img2prompt")
+    version = model.versions.get("50adaf2d3ad20a6f911a8a9e3ccf777b263b8596fbd2c8fc26e8888f8a0edbb5")
+    output = version.predict(image=f)
+    return output
+
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -67,8 +79,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text(roast)
 
 async def get_prompt(photo_path):
-    return "a person with red hair holding a piece of paper, 1 7 - year - old anime goth girl, 1 7 - year - old goth girl, 1 8 yo, emo, female emo art student, 2 0 yo, 20yo, 1 9 year old, emo anime girl, please do your best, tall female emo art student, hyper - goth"
-
+    return await img2Txt(photo_path)
+   
 async def get_roast(prompt: str, request_type: str):
     headers = {'Content-Type': "application/json", "Authorization": "Bearer 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"}
     prompt = f"Make a compliment using this prompt: {prompt}" if request_type == COMPLIMENT else f"Make the worst insult using this prompt: {prompt}"
