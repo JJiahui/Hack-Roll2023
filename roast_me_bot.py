@@ -1,3 +1,4 @@
+import random
 import os, requests
 from dotenv import load_dotenv
 import logging
@@ -26,6 +27,9 @@ logger = logging.getLogger(__name__)
 COMPLIMENT = "COMPLIMENT"
 ROAST = "ROAST"
 REQUEST_TYPE = "REQUEST_TYPE"
+compliment_emojis = list("🤗👍✌😎🎉👏💪😄😊🤩😌🥰😘😍")
+roast_emojis = list("🤦‍♂️🤦‍♀️😈💀🐵🤏👎🐒�😑�🔥🤡🤥🤓")
+
 
 # Define a few command handlers. These usually take the two arguments update and
 # context.
@@ -53,7 +57,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     request_type = context.user_data[REQUEST_TYPE]
     context.user_data[REQUEST_TYPE] = None
 
-    await update.message.reply_text("Photo received, generating compliment... 🤗" if request_type == COMPLIMENT else "Photo received, generating roast... 🔥")
+    await update.message.reply_text("Photo received, generating compliment... " + random.choice(compliment_emojis) if request_type == COMPLIMENT else "Photo received, generating roast... " + random.choice(roast_emojis))
     file_id = update.message.photo[-1].file_id
     photo = await context.bot.get_file(file_id)
     # await photo.download_to_drive()
