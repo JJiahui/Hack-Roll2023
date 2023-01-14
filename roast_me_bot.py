@@ -23,6 +23,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+COMPLIMENT = "COMPLIMENT"
+ROAST = "ROAST"
+REQUEST_TYPE = "REQUEST_TYPE"
 
 # Define a few command handlers. These usually take the two arguments update and
 # context.
@@ -30,14 +33,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     # user = update.effective_user
     await update.message.reply_html(
-        rf"Welcome to RoastMeBot, send any photo to get roasted! 🔥😈🔥",
+        rf"Welcome to RoastMeBot! If you want to get roasted 🔥 or complimented 🤗, you've come to the right place!",
         # reply_markup=ForceReply(selective=True),
     )
 
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /help is issued."""
-    await update.message.reply_text("Send any photo to get roasted! 🔥😈🔥")
+# async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+#     """Send a message when the command /help is issued."""
+#     await update.message.reply_text("Send any photo to get roasted! 🔥😈🔥")
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -45,26 +48,42 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(update.message.text)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text("Photo received, generating roast... 🔥")
+    if REQUEST_TYPE not in context.user_data or context.user_data[REQUEST_TYPE] == None:
+        return
+    request_type = context.user_data[REQUEST_TYPE]
+    context.user_data[REQUEST_TYPE] = None
+
+    await update.message.reply_text("Photo received, generating compliment... 🤗" if request_type == COMPLIMENT else "Photo received, generating roast... 🔥")
     file_id = update.message.photo[-1].file_id
     photo = await context.bot.get_file(file_id)
     # await photo.download_to_drive()
     # await update.message.reply_text("Photo downloaded")
     prompt = await get_prompt(photo)
-    roast = await get_roast(prompt)
+    roast = await get_roast(prompt, request_type)
     await update.message.reply_text(roast)
 
 async def get_prompt(photo):
     return "a person with red hair holding a piece of paper, 1 7 - year - old anime goth girl, 1 7 - year - old goth girl, 1 8 yo, emo, female emo art student, 2 0 yo, 20yo, 1 9 year old, emo anime girl, please do your best, tall female emo art student, hyper - goth"
 
-async def get_roast(prompt):
+async def get_roast(prompt: str, request_type: str):
     headers = {'Content-Type': "application/json", "Authorization": "Bearer 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"}
-    prompt = f"Make a roast or insult using this prompt: {prompt}"
+    prompt = f"Make a compliment using this prompt: {prompt}" if request_type == COMPLIMENT else f"Make the worst insult using this prompt: {prompt}"
+    logger.info(prompt)
     payload = {"model": "text-davinci-003", "prompt": prompt, "temperature": 0.7, "max_tokens": 4000}
-    result = requests.post('https://api.openai.com/v1/completions', headers = headers, json=payload)
-    return result.json()['choices'][0]['text']
+    response = requests.post('https://api.openai.com/v1/completions', headers = headers, json=payload)
+    logger.info(response.json())
+    text = response.json()['choices'][0]['text'].split("\n\n")[1]
+    if text.startswith('"') and text.endswith('"'):
+        text = text[1: -1]
+    return text
 
+async def handle_roast_me(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data[REQUEST_TYPE] = ROAST
+    await update.message.reply_text("Please send a photo!")
+
+async def handle_compliment_me(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data[REQUEST_TYPE] = COMPLIMENT
+    await update.message.reply_text("Please send a photo!")
 
 def main() -> None:
     """Start the bot."""
@@ -74,7 +93,9 @@ def main() -> None:
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
+    # application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("roast_me", handle_roast_me))
+    application.add_handler(CommandHandler("compliment_me", handle_compliment_me))
 
     # on non command i.e message - echo the message on Telegram
     # application1.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
