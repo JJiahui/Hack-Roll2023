@@ -60,13 +60,13 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text("Photo received, generating compliment... " + random.choice(compliment_emojis) if request_type == COMPLIMENT else "Photo received, generating roast... " + random.choice(roast_emojis))
     file_id = update.message.photo[-1].file_id
     photo = await context.bot.get_file(file_id)
-    # await photo.download_to_drive()
+    photo_path = await photo.download_to_drive()
     # await update.message.reply_text("Photo downloaded")
-    prompt = await get_prompt(photo)
+    prompt = await get_prompt(photo_path)
     roast = await get_roast(prompt, request_type)
     await update.message.reply_text(roast)
 
-async def get_prompt(photo):
+async def get_prompt(photo_path):
     return "a person with red hair holding a piece of paper, 1 7 - year - old anime goth girl, 1 7 - year - old goth girl, 1 8 yo, emo, female emo art student, 2 0 yo, 20yo, 1 9 year old, emo anime girl, please do your best, tall female emo art student, hyper - goth"
 
 async def get_roast(prompt: str, request_type: str):
