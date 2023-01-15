@@ -14,7 +14,7 @@ if __version_info__ < (20, 0, 0, "alpha", 1):
         f"{TG_VER} version of this example, "
         f"visit https://docs.python-telegram-bot.org/en/v{TG_VER}/examples.html"
     )
-from telegram import ForceReply, Update
+from telegram import ForceReply, Update, constants
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 import replicate
@@ -40,7 +40,7 @@ COMPLIMENT = "COMPLIMENT"
 ROAST = "ROAST"
 REQUEST_TYPE = "REQUEST_TYPE"
 compliment_emojis = list("🤗👍✌😎🎉👏💪😄😊🤩😌🥰😘😍")
-roast_emojis = list("🤦‍♂️🤦‍♀️😈💀🐵🤏👎🐒�😑�🔥🤡🤥🤓")
+roast_emojis = list("🤦‍♂️🤦‍♀️😈💀🐵🤏👎🐒😑🔥🤡🤥🤓")
 
 
 # Define a few command handlers. These usually take the two arguments update and context.
@@ -57,6 +57,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     context.user_data[REQUEST_TYPE] = None
 
     await update.message.reply_text("Photo received, generating compliment... " + random.choice(compliment_emojis) if request_type == COMPLIMENT else "Photo received, generating roast... " + random.choice(roast_emojis))
+    await context.bot.send_chat_action(chat_id=update.message.chat_id, action=constants.ChatAction.TYPING)
     file_id = update.message.photo[-1].file_id
     photo = await context.bot.get_file(file_id)
     photo_path = await photo.download_to_drive()
