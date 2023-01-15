@@ -1,5 +1,4 @@
-import random
-import os, requests
+import os, requests, random, asyncio
 from dotenv import load_dotenv
 import logging
 from telegram import __version__ as TG_VER
@@ -25,8 +24,6 @@ model = replicate.models.get("pharmapsychotic/clip-interrogator")
 version = model.versions.get("a4a8bafd6089e1716b06057c42b19378250d008b80fe87caa5cd36d40c1eda90")
 
 async def img2Txt(image_path):
-    #image_path = '/Users/kaiweilow/Desktop/HandR/6tuwubtzguba1.jpeg'
-    #image_path = 'https://i.redd.it/38efkvejdyba1.jpg'
     f = open(image_path, 'rb')
     #model = replicate.models.get("methexis-inc/img2prompt")
     #version = model.versions.get("50adaf2d3ad20a6f911a8a9e3ccf777b263b8596fbd2c8fc26e8888f8a0edbb5")
@@ -46,25 +43,12 @@ compliment_emojis = list("🤗👍✌😎🎉👏💪😄😊🤩😌🥰😘�
 roast_emojis = list("🤦‍♂️🤦‍♀️😈💀🐵🤏👎🐒�😑�🔥🤡🤥🤓")
 
 
-# Define a few command handlers. These usually take the two arguments update and
-# context.
+# Define a few command handlers. These usually take the two arguments update and context.
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
-    # user = update.effective_user
     await update.message.reply_html(
         rf"Welcome to RoastMeBot! If you want to get roasted 🔥 or complimented 🤗, you've come to the right place!",
-        # reply_markup=ForceReply(selective=True),
     )
-
-
-# async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     """Send a message when the command /help is issued."""
-#     await update.message.reply_text("Send any photo to get roasted! 🔥😈🔥")
-
-
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text(update.message.text)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if REQUEST_TYPE not in context.user_data or context.user_data[REQUEST_TYPE] == None:
@@ -76,7 +60,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     file_id = update.message.photo[-1].file_id
     photo = await context.bot.get_file(file_id)
     photo_path = await photo.download_to_drive()
-    # await update.message.reply_text("Photo downloaded")
     prompt = await get_prompt(photo_path)
     roast = await get_roast(prompt, request_type)
     await update.message.reply_text(roast)
@@ -112,12 +95,8 @@ def main() -> None:
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", start))
-    # application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("roast_me", handle_roast_me))
     application.add_handler(CommandHandler("compliment_me", handle_compliment_me))
-
-    # on non command i.e message - echo the message on Telegram
-    # application1.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
