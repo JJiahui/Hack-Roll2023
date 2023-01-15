@@ -68,7 +68,7 @@ async def get_prompt(photo_path):
     return await img2Txt(photo_path)
    
 async def get_roast(prompt: str, request_type: str):
-    headers = {'Content-Type': "application/json", "Authorization": "Bearer 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"}
+    headers = {'Content-Type': "application/json", "Authorization": f"Bearer {OPENAI_KEY}"}
     prompt = f"Make a compliment using this prompt: {prompt}" if request_type == COMPLIMENT else f"Make the worst insult using this prompt: {prompt}"
     logger.info(prompt)
     payload = {"model": "text-davinci-003", "prompt": prompt, "temperature": 0.7, "max_tokens": 4000}
@@ -87,10 +87,19 @@ async def handle_compliment_me(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data[REQUEST_TYPE] = COMPLIMENT
     await update.message.reply_text("Please send a photo!")
 
+async def handle_error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.user_data != None and REQUEST_TYPE in context.user_data:
+        context.user_data[REQUEST_TYPE] = None
+    await update.message.reply_text("An error has occurred, please try again!")
+
+
 def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token.
     load_dotenv()
+    global OPENAI_KEY
+    OPENAI_KEY = os.environ.get("OPENAI_KEY")
+
     application = Application.builder().token(os.environ.get("TOKEN")).build()
 
     # on different commands - answer in Telegram
@@ -99,6 +108,8 @@ def main() -> None:
     application.add_handler(CommandHandler("compliment_me", handle_compliment_me))
 
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+
+    application.add_error_handler(handle_error)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
